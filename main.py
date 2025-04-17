@@ -19,15 +19,15 @@ tile_map = [
             [1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0],
             [1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,0,1,0],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,0,1,0],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0],
-            [1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0],
+            [1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
             ]
@@ -96,6 +96,7 @@ class PLAYER():
     def __init__(self,x,y):
         self.imgs = [image.load("robo_and2.png"),image.load("robo_and.png"),image.load("robo_and03.png")]
         self.img = self.imgs[0]
+        self.flip = False
         self.img_index = 0
         
         self.rect = self.img.get_rect()
@@ -104,20 +105,33 @@ class PLAYER():
         self.time_shotter = TEMPORIZADOR(15)
         self.ref_ani = 1
     def updade(self):
-        self.img_index += 0.2*self.ref_ani
-        if int(self.img_index) >= 3 or self.img_index <= 0:
-            self.ref_ani *= -1
-            self.img_index += 0.2*self.ref_ani
-
-        
         keys = key.get_pressed()
         dire = Vector2(keys[K_d]-keys[K_a],keys[K_s]-keys[K_w])
-        self.img = transform.flip(self.imgs[int(self.img_index)],keys[K_a],False)
+        # SISTEMA DE ANIMACAO
+        #============================================#
+        if dire != Vector2(0,0):
+            #ANDANDO
+            self.img_index += 0.2*self.ref_ani
+            if int(self.img_index) >= 3 or self.img_index <= 0:
+                self.ref_ani *= -1
+                self.img_index += 0.2*self.ref_ani
+        else:
+            #PARADO
+            self.img_index = 1
+        #============================================#
+        
+        #DIRECAO DA IMAGEM
+        if keys[K_d] or keys[K_a]:
+            self.flip = (keys[K_a]-keys[K_d]+1)//2
 
+        self.img = transform.flip(self.imgs[int(self.img_index)],self.flip,False)
+        #SISTEMA DE COLISAO
+        #========================================================================#
         if intsec_listRect(self.rect,list_colider,Vector2(dire.x*2,0)):
             dire.x = 0
         if intsec_listRect(self.rect,list_colider,Vector2(0,dire.y*2)):
             dire.y = 0
+        #========================================================================#
         
         Mous = mouse.get_pressed()
         self.time_shotter.rodar()
@@ -139,7 +153,6 @@ class PLAYER():
     def draw(self,surfac):
         surfac.blit(self.img,self.rect)
 
-
 class CHAO():
     def __init__(self,x,y):
         self.img = Surface((16,16))
@@ -147,7 +160,7 @@ class CHAO():
         self.rect = self.img.get_rect()
         self.rect.x = x
         self.rect.y = y
-        
+    
     def draw(self,surfac):
         surfac.blit(self.img,self.rect)
 
