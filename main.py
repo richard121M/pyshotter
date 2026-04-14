@@ -6,10 +6,10 @@ init()
 #============================#
 tile_map = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-            [1,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0],
+            [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0],
             [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0],
-            [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+            [1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0],
+            [1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
             [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0],
             [1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0],
@@ -59,6 +59,11 @@ def intsec_listRect(rectA,listRec,dire):
         if intesec_rects(rectA,i.rect,dire):
             return True
     return False
+
+class Point():
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
 
 class TEMPORIZADOR():
     def __init__(self,frames):
@@ -180,44 +185,38 @@ caho = WALL(100,100,16,16)
 
 def inter_tile(TileMap : list):
     tilemap = list(TileMap)
-    Tx = -1
-    Ty = -1
-    Bx = -1
-    By = -1
+    Top = Point(-1,-1)
+    Botton = Point(-1,-1)
     pos_y = 0
     for list_x in tilemap:
         pos_x = 0
         for i in list_x:
             if i == 1:
                 tilemap[pos_y][pos_x] = 0
-            if Tx == -1:
-                if i == 1:
-                    Ty = pos_y
-                    Tx = pos_x
-            if Tx != -1:
-                if i == 0:
-                    Bx = pos_x -1
-            if Tx !=-1 and Bx != -1:
-                ye = Ty+1
-                while(By ==-1):
-                    for a in range(Tx,Bx+1):
-                        if tilemap[ye][a] != 1:
-                            By = ye-1
-                            w_ = Bx+1 - Tx
-                            h_ = By+1 - Ty
-                            list_spr.append(WALL(Tx*16,Ty*16,w_*16,h_*16))
-                            list_colider.append(WALL(Tx*16,Ty*16,w_*16,h_*16))
-
-                    if By == -1:
-                        for a in range(Tx,Bx+1):
-                            tilemap[ye][a] = 0
-                    if By != -1:
-                        Tx = -1
-                        Ty = -1
-                        Bx = -1
-                        By = -1
-                        break
+                if Top.x == -1:
+                    Top = Point(pos_x,pos_y)
+                    
+            elif i == 0:
+                if Top.x != -1:
+                    Botton.x = pos_x -1
+            
+            if Top.x !=-1 and Botton.x != -1:
+                ye = Top.y+1
+                while(Botton.y ==-1):
+                    for a in range(Top.x,Botton.x+1):
+                        if tilemap[ye][a] == 0:
+                            Botton.y = ye -1
+                            w_ = Botton.x+1 - Top.x
+                            h_ = Botton.y+1 - Top.y
+                            parede = WALL(Top.x*16,Top.y*16,w_*16,h_*16)
+                            list_spr.append(parede)
+                            list_colider.append(parede)
+                        if Botton.y == -1:
+                            tilemap[ye-1][a] = 0
                     ye += 1 
+                if Botton.y != -1:
+                    Top = Point(-1,-1)
+                    Botton = Point(-1,-1)
             pos_x += 1
         pos_y += 1
 list_spr.append(player)
