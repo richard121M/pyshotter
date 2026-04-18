@@ -35,6 +35,7 @@ tile_map = [
 list_spr = []
 list_colider = []
 list_bullet = []
+
 def intesec_rects(rectA,rectB,dire):
     mirol_ = rectA.copy()
     mirol_.x += dire.x
@@ -59,11 +60,6 @@ def intsec_listRect(rectA,listRec,dire):
         if intesec_rects(rectA,i.rect,dire):
             return True
     return False
-
-class Point():
-    def __init__(self,x,y):
-        self.x = x
-        self.y = y
 
 class TEMPORIZADOR():
     def __init__(self,frames):
@@ -104,7 +100,9 @@ class PLAYER():
         self.flip = False
         self.img_index = 0
         
+        self.vel = 1
         self.rect = self.img.get_rect()
+        self.position = Vector2(x,y)
         self.rect.x = x
         self.rect.y = y
         self.time_shotter = TEMPORIZADOR(15)
@@ -112,6 +110,7 @@ class PLAYER():
     def updade(self):
         keys = key.get_pressed()
         dire = Vector2(keys[K_d]-keys[K_a],keys[K_s]-keys[K_w])
+        
         # SISTEMA DE ANIMACAO
         #============================================#
         if dire != Vector2(0,0):
@@ -130,11 +129,12 @@ class PLAYER():
             self.flip = (keys[K_a]-keys[K_d]+1)//2
 
         self.img = transform.flip(self.imgs[int(self.img_index)],self.flip,False)
+
         #SISTEMA DE COLISAO
         #========================================================================#
-        if intsec_listRect(self.rect,list_colider,Vector2(dire.x*2,0)):
+        if intsec_listRect(self.rect,list_colider,Vector2(dire.x*self.vel,0)):
             dire.x = 0
-        if intsec_listRect(self.rect,list_colider,Vector2(0,dire.y*2)):
+        if intsec_listRect(self.rect,list_colider,Vector2(0,dire.y*self.vel)):
             dire.y = 0
         #========================================================================#
         
@@ -152,9 +152,14 @@ class PLAYER():
             list_bullet.append(bullet)
             list_spr.append(bullet)
             self.time_shotter.reniciar()
-
-        self.rect.x += dire.x*2
-        self.rect.y += dire.y*2
+        self.position.x += dire.x*self.vel
+        self.position.y += dire.y*self.vel
+        #O rect do pygame aredonda a possicao por isso
+        # nao posso colocar self.rect.x += dire.x*self.vel
+        ##====================================##
+        self.rect.x = self.position.x
+        self.rect.y = self.position.y
+        ##====================================##
     def draw(self,surfac):
         surfac.blit(self.img,self.rect)
 
@@ -180,13 +185,13 @@ class WALL():
     def draw(self,surfac):
         surfac.blit(self.img,self.rect)
 
-player = PLAYER(32,32)
-caho = WALL(100,100,16,16)
+player = PLAYER(48,32)
+list_spr.append(player)
 
 def inter_tile(TileMap : list):
     tilemap = list(TileMap)
-    Top = Point(-1,-1)
-    Botton = Point(-1,-1)
+    Top = Vector2(-1,-1)
+    Botton = Vector2(-1,-1)
     pos_y = 0
     for list_x in tilemap:
         pos_x = 0
@@ -194,16 +199,16 @@ def inter_tile(TileMap : list):
             if i == 1:
                 tilemap[pos_y][pos_x] = 0
                 if Top.x == -1:
-                    Top = Point(pos_x,pos_y)
+                    Top = Vector2(pos_x,pos_y)
                     
             elif i == 0:
                 if Top.x != -1:
                     Botton.x = pos_x -1
             
             if Top.x !=-1 and Botton.x != -1:
-                ye = Top.y+1
+                ye = int(Top.y+1)
                 while(Botton.y ==-1):
-                    for a in range(Top.x,Botton.x+1):
+                    for a in range(int(Top.x), int(Botton.x+1)):
                         if tilemap[ye][a] == 0:
                             Botton.y = ye -1
                             w_ = Botton.x+1 - Top.x
@@ -215,25 +220,25 @@ def inter_tile(TileMap : list):
                             tilemap[ye-1][a] = 0
                     ye += 1 
                 if Botton.y != -1:
-                    Top = Point(-1,-1)
-                    Botton = Point(-1,-1)
+                    Top = Vector2(-1,-1)
+                    Botton = Vector2(-1,-1)
             pos_x += 1
         pos_y += 1
-list_spr.append(player)
 
-# list_spr = [player,caho]
 class CAMERA():
     def __init__(self):
         self.tela_img = display.get_surface()
         self.pos = Vector2(0,0)
-    def draw_screen(self,surfac):
-        x_ = lerp(self.pos.x,(player.rect.x+8-384/2),0.06)
-        y_ = lerp(self.pos.y,(player.rect.y+8-216/2),0.06)
+    def draw_screen(self,surfac,target,listSpr):
+        x_ = lerp(self.pos.x,(target.rect.x+8-384/2),0.06)
+        y_ = lerp(self.pos.y,(target.rect.y+8-216/2),0.06)
         self.pos = Vector2(x_,y_)
         
-        for spr in list_spr:
+        for spr in listSpr:
             # rec = spr.rect
+            #if spr.rect :
             pos = [spr.rect.x,spr.rect.y]
+            
             pos[0] -= self.pos.x
             pos[1] -= self.pos.y
             surfac.blit(spr.img,pos)
@@ -249,14 +254,14 @@ while LOOP:
         if evente.type == QUIT:
             LOOP = False
     
-
     for i in list_bullet:
         i.updade()
 
     screen.fill((0, 0, 0))
     canva.fill((0,50,100))
+
     player.updade()
-    cam.draw_screen(canva)
+    cam.draw_screen(canva,player,list_spr)
     screen.blit(canva,(0,0))
 
     display.flip()
